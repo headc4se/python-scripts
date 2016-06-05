@@ -1,0 +1,150 @@
+#!/usr/bin/env python
+
+from pymongo import MongoClient
+import argparse
+import logging
+import sys
+import termcolor
+from termcolor import cprint, colored
+from time import gmtime, strftime
+from datetime import datetime
+
+
+"""
+To Do:
+Fix search functionality
+"""
+
+
+#logging.basicConfig(level=logging.INFO)
+
+
+def main():
+
+    ## Arg parsing here
+
+    parser= argparse.ArgumentParser(description='[*] Query and edit a database of code snippets')  
+    parser.add_argument('function',help='query function in database', nargs='*')
+    # Only takes one language at the moment 
+    parser.add_argument('-l','--language' ,help='language specification')
+    parser.add_argument('-n','--number', default=5, type=int, help='specify the number of results to be returned, default is 5')
+    parser.add_argument('-a','--add', action='store_true', help='flag to add snippet to database') 
+
+    args = parser.parse_args()
+    logging.info(args)
+
+    # Joins function argument into one string
+    """
+    if args.function:
+        function = args.function.join()
+       function = join(args.function)
+    #Tests for mutually exclusive flags/improper settings
+    """
+
+    # Tests for mutual exclusivity
+    """
+    if args.number and args.add:
+        print "[*] You cannot specify -a and -n as options together."
+        sys.exit()
+    """
+
+    # Tests for multiple languages
+    """
+    if args.language:
+        logging.info('number of languages : '+str(len(args.language)))
+        if (len(args.language) > 1 and args.add):
+            print "[*] Each snippet can only have one language."
+            sys.exit()
+    """
+
+    if not args.function: 
+        logging.info('no function input')
+    if not args.language:
+        logging.info('no language input')
+
+    # Connect to database
+    global db
+    client = MongoClient('localhost',27017)
+    db = client.snippets.snippets
+
+    if args.add:
+        insert(args)
+    else:
+        search(args)
+"""
+[*] Search Function
+"""
+
+def search(args):
+    logging.info(" [**] Attempting Search [**] ")
+    if args.language:
+        language = args.language.lower()
+        logging.info('language : ' +language)
+        function = [x.lower() for x in args.function]
+        logging.info('function : ' +str(function))
+        x = 0
+        for snippet in db.find({"language": language, "function": { "$in": function } }):
+            x += 1
+            logging.info('raw snippet : '+str(snippet))
+
+            print colored('[*][*] Snippet #'+str(x), 'cyan', attrs=['bold'])
+
+            for string in snippet["function"]:
+                sys.stdout.write(colored(string, 'red', attrs=['bold'])+' ')
+            #language = colored("\nlang: "+snippet["language"], 'red')
+            print
+
+           # print "\n lang: "+language
+
+            for line in snippet["snippet"]:
+                print line
+            print
+
+
+
+## Add function
+
+def insert(args):
+    if not args.function:
+       function = raw_input('[*] What is the name of the snippet you would like to add? ').lower()
+    else:
+        function = [x.lower() for x in args.function]
+    logging.info("function : "+ str(function))
+    if not args.language:
+       language = raw_input('[*] What is the name of the language this snippet is in? ').lower()
+    else:
+        language = args.language.lower()
+    logging.info("language : "+ str(language))
+    print "[*] Type the snippet below! Copy and Paste is acceptable"
+    print "[*] To exit type three backticks (`) and press enter."
+    snippet = []
+    while True:
+        snippet_str = raw_input(" > ").lower()
+        if snippet_str == "```":
+            break
+        else:
+            snippet.append(snippet_str)
+
+    for line in snippet:
+        print line
+
+    inpt =  raw_input("[*] Like it? Enter y(es)/n(o)/q(uit) ")
+    if inpt == ('y' or 'yes'):
+        date = str(datetime.now())
+        db.insert_one({"function": function, "language":language, "snippet":snippet, "date": date})
+    if inpt == ('n' or 'no'):
+       print "[*] Okay, let's try again "
+       insert(args)
+       sys.exit()
+    if inpt == ('q' or 'quit'):
+        print "[*] Take care now! "
+
+
+    logging.info("Testing whether entry is inserted.")
+    if db.find_one({"function": function}):
+        logging.info("Entry is in database.")
+
+
+
+if __name__ == "__main__":
+    main()

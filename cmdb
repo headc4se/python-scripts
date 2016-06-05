@@ -1,0 +1,317 @@
+#!/usr/bin/env python
+
+from pymongo import MongoClient
+import sys
+import argparse
+import logging
+import pprint
+import termcolor
+from termcolor import cprint, colored
+
+
+## Need to add category search
+
+## Logs basic info 
+#logging.basicConfig(level=logging.INFO)
+
+
+def main():
+
+    ## Parsing command line arguments
+
+    parser= argparse.ArgumentParser(description='[*] Query and edit a database of user inputted commands. Only takes one flag!')
+    group = parser.add_mutually_exclusive_group()
+    parser.add_argument('cmd',help='query command in database')
+    group.add_argument('-a','--add', action='store_true', help='flag to add command to database')
+    group.add_argument('-e','--edit', action='store_true', help='flag to edit command in database')
+    group.add_argument('-u','--update', action='store_true', help='flag to update command in database with code examples')
+    group.add_argument('-s','--search', action='store_true', help='flag to search for command in database, default command')
+    group.add_argument('-c','--category',action='store_true', help='flag to list all commands of a specific type in the database')
+    args = parser.parse_args()
+
+    if not (args.add or args.edit or args.update or args.category):
+            args.search=True
+
+    logging.info('Passed args')
+    logging.info(args)
+
+
+    ## Connects to MongoDB at localhost, exposes commands collection as global variable
+    global db
+    client = MongoClient('localhost',27017)
+    db = client.commands.commands
+    
+    # Checks for add, edit, update, or search flag
+    if args.add or args.edit or args.update or args.search:
+        # attempts to find command in database
+        searchResult = db.find_one({"name": args.cmd}) 
+        logging.info(searchResult)
+
+        if searchResult and args.edit:
+            editEntry(args.cmd)
+
+        if not searchResult and args.edit:
+            for x in range(0,3): 
+                valid = ['y','n','yes','no']
+                inp = raw_input('[*] The command '+str(args.cmd)+' was not found in the database, would you like to add it [y(es)/n(o)]? ')
+                if inp.lower() == ('n' or 'no'):
+                    print '[*] Exiting program'
+                    sys.exit()
+                if inp.lower() ==('y' or 'yes'):
+                    addEntry(str(args.cmd))
+                    break
+                else:
+                    print '[*] Sorry that input is not valid. Try again.'
+                    if (x == 2):
+                        sys.exit()
+
+        if searchResult and args.update:
+            addExample(args.cmd)
+
+        if not searchResult and args.update:
+            for x in range(0,3): 
+                valid = ['y','n','yes','no']
+                inp = raw_input('[*] The command '+str(args.cmd)+' was not found in the database, would you like to add it [y(es)/n(o)]? ')
+                if inp.lower() == ('n' or 'no'):
+                    print '[*] Exiting program'
+                    sys.exit()
+                if inp.lower() ==('y' or 'yes'):
+                    addEntry(str(args.cmd))
+                    break
+                else:
+                    print '[*] Sorry that input is not valid. Try again.'
+                    if (x == 2):
+                        sys.exit()
+
+        # condition if result is found and -a flag is on
+        if searchResult and args.add:
+            # loop to confirm editing 
+            for x in range(0,3): 
+                valid = ['y','n','yes','no']
+                inp = raw_input('[*] The command '+str(args.cmd)+' was found in the database, would you like to edit it [y(es)/n(o)]? ')
+                if inp.lower() == ('n' or 'no'):
+                    print '[*] Exiting program'
+                    sys.exit()
+                if inp.lower() ==('y' or 'yes'):
+                    editEntry(args.cmd) 
+                    break
+                else:
+                    print '[*] Sorry that input is not valid. Try again.'
+                    if (x == 2):
+                        sys.exit()
+
+
+        if not searchResult and args.add:
+            logging.info('No matching result, attempting to add entry')
+            addEntry(str(args.cmd))
+
+        if searchResult and args.search:
+            name = colored(searchResult["name"], 'red', attrs=['bold', 'underline'])
+            print(name)
+            for category in searchResult["category"]: 
+                category = colored(category, 'red')
+                if len(searchResult["category"]) != 1:
+                    sys.stdout.write(category+' | ')
+                else: 
+                    sys.stdout.write(category)
+            sys.stdout.write(' \n')
+            for num in searchResult["code"]:
+                sys.stdout.write(num+') ')
+                print searchResult["code"][num][0]
+                print '   '+searchResult["code"][num][1]
+
+        if not searchResult and args.search:
+            for x in range(0,3): 
+                valid = ['y','n','yes','no']
+                inp = raw_input('[*] The command '+str(args.cmd)+' was not found in the database, would you like to add it [y(es)/n(o)]? ')
+                if inp.lower() == ('n' or 'no'):
+                    print '[*] Exiting program'
+                    sys.exit()
+                if inp.lower() ==('y' or 'yes'):
+                    addEntry(str(args.cmd))
+                    break
+                else:
+                    print '[*] Sorry that input is not valid. Try again.'
+                    if (x == 2):
+                        sys.exit()
+
+
+def addEntry(cmd, command={}):
+    # Insert Categories
+    if not command:
+        categoryRaw = raw_input("[*] What category is "+cmd+"? You can insert multiple comma separated values : ")
+        category = [category.strip() for category in categoryRaw.split(',')]
+
+        # Insert Code Examples
+        codeRaw = raw_input("[*] Would you like to write a code example? [y(es)/n(o)]? ") 
+        code = {}
+        if codeRaw.lower() == ('y' or 'yes'):
+            while True: 
+                example = raw_input("[*] Write out the example : ")
+                comment = raw_input("[*] Write out a comment for the example : ")
+                num = len(code) + 1
+                code[str(num)] = [example, comment]
+                for num in code:
+                    sys.stdout.write(num+') ')
+                    print code[num][0]
+                    print '   '+code[num][1]
+                another = raw_input("[*] Would you like to add another example [y(es)/n(o)]? ")
+                #if another.lower() == ('y' or 'yes'):
+                if another.lower() == ('n' or 'no'):
+                    break
+                elif another.lower() != ('y' or 'yes'):
+                    print '[*] Sorry that input is not valid, skipping section'
+        elif codeRaw.lower() == ('n' or 'no'):
+            print '[*] Okay, moving along.'
+        else:
+            print '[*] Sorry that input is not valid, skipping section' 
+        
+        command = {"name": cmd, "category": category, "code": code } 
+
+        # Check For Errors
+        for x in range (0,2):
+            name = colored(command["name"], 'red', attrs=['bold','underline'])
+            print(name)
+            for category in command["category"]: 
+                category = colored(category, 'red')
+                if len(command["category"]) != 1:
+                    sys.stdout.write(category+' | ')
+                else:
+                    sys.stdout.write(category)
+            sys.stdout.write(' \n')
+            for num in command["code"]:
+                sys.stdout.write(num+') ')
+                print command["code"][num][0]
+                print '   '+command["code"][num][1]
+            cont = raw_input('[*] Does this entry look alright to you [y(es)/n(o)/q(uit)]? ')
+            if cont.lower() == ('y' or 'yes'):
+                break
+            if cont.lower() == ('n' or 'no'):
+                print '[*] Okay, let\'s try again.'
+                editEntry(cmd, command, True)
+                sys.exit()
+            if cont.lower() == ('q' or 'quit'): 
+                print '[*] Exiting program.'
+                sys.exit()
+            else:
+                print '[*] Sorry that input is not valid.'
+                if (x == 2):
+                    sys.exit()
+            
+    db.insert(command)
+    print '[*] Adding record to database.'
+    print '[*] Exiting program.'
+
+def editEntry(cmd, command={}, new=False):
+
+    # Checks to see if a record is being passed, if not, finds it in the database
+    name = cmd
+    if not command: 
+        command = db.find_one({"name":name})
+
+    # Editing loop 
+    while True:
+        name = colored(command["name"], 'red', attrs=['bold','underline'])
+        print(name)
+        for category in command["category"]: 
+            category = colored(category, 'red')
+            if len(command["category"]) != 1:
+                sys.stdout.write(category+' | ')
+            else:
+                sys.stdout.write(category)
+        sys.stdout.write(' \n')
+        for num in command["code"]:
+            sys.stdout.write(num+') ')
+            print command["code"][num][0]
+            print '   '+command["code"][num][1]
+        field = raw_input('[*] Which field of '+cmd+' would you like to edit? [n(ame) / c(ategory) / co(de)] Press a(dd) to add the edited entry or q(uit) to quit. ') 
+        if field.lower() == ('n' or 'name'):
+            name = raw_input('[*] Type the new name for the command : ')
+            var = db.find_one({"name":name})
+            if var and command["name"] != var["name"]:
+                print '[*] A record with this name exists in the database'
+            else:
+                command["name"] = name
+        if field.lower() == ('co' or 'code'):
+            for num in command["code"]:
+                sys.stdout.write(num+') ')
+                print command["code"][num][0]
+                print '   '+command["code"][num][1]
+            num = raw_input('[*] Type the number of the input you want to edit. Alternatively type a new number to create a new entry. ')
+            try:
+                if command["code"][num]:
+                    delete = raw_input('[*] Would you like to d(elete) or e(dit) this entry? ')
+                    if delete.lower() == ('d' or 'delete'):
+                        print 'deleting code'
+                        del command["code"][num]
+                    elif delete.lower() == ('e' or 'edit'):
+                        example = raw_input('[*] Write out the example : ')
+                        comment = raw_input('[*] Write out the comment : ')
+                        command["code"][num]=[example, comment]
+                    else: 
+                        print '[*] Sorry that input is not valid. Skipping section.'
+            except: 
+                try: 
+                    int(num) 
+                    example = raw_input('[*] Write out the example : ')
+                    comment = raw_input('[*] Write out the comment : ')
+                    command["code"][str(num)]=[example, comment]
+                except:
+                    print '[*] Sorry that input is not valid. Skipping section.'
+
+        if field.lower() == ('c' or 'category'): 
+           categoryRaw = raw_input('[*] Type out the new list of categories, separated by commas : ') 
+           category = [category.strip() for category in categoryRaw.split(',')]
+           command["category"] = category
+        if field.lower() == ('q' or 'quit'):
+            print '[*] Exiting program'
+            sys.exit()
+        if field.lower() == ('a'): 
+            if new == True:
+                addEntry(cmd, command)
+            else:
+                db.update_one({"name": command["name"]}, {"$set":command})
+                print '[*] Editing entry.'
+                print '[*] Exiting program.'
+            break
+
+def addExample(cmd):
+    command=db.find_one({"name": cmd})
+    while True:
+        for num in command["code"]:
+            sys.stdout.write(num+') ')
+            print command["code"][num][0]
+            print '   '+command["code"][num][1]
+        num = raw_input('[*] Type the number of the input you want to edit. Alternatively type a new number to create a new entry, type q(uit) to quit, or type a(dd) to add the edited entry. ')
+        if num == ('q' or 'quit'):
+            sys.exit()
+        if num == ('a' or 'add'):
+            print '[*] Editing entry'
+            db.update_one({"name": cmd}, {"$set":command})
+            print '[*] Exiting program'
+            break
+        try:
+            if command["code"][str(num)]:
+                delete = raw_input('[*] Would you like to d(elete) or e(dit) this entry? ')
+                if delete.lower() == ('d' or 'delete'):
+                    del command["code"][str(num)]
+                if delete.lower() == ('e' or 'edit'):
+                    example = raw_input('[*] Write out the example : ')
+                    comment = raw_input('[*] Write out the comment : ')
+                    command["code"][str(num)]=[example, comment]
+                else: 
+                    print '[*] Sorry that input is not valid. Skipping section.'
+        except: 
+            try: 
+                int(num) 
+                example = raw_input('[*] Write out the example : ')
+                comment = raw_input('[*] Write out the comment : ')
+                command["code"][str(num)]=[example, comment]
+            except:
+                print '[*] Sorry that input is not valid. Skipping section.'
+        #    commands.find_one({"category": args.cmd})
+
+if __name__ == "__main__":
+    main()
+
+
