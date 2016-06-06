@@ -16,7 +16,7 @@ Fix search functionality
 """
 
 
-#logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 
 def main():
@@ -106,7 +106,7 @@ def search(args):
 
 def insert(args):
     if not args.function:
-       function = raw_input('[*] What is the name of the snippet you would like to add? ').lower()
+       function = raw_input('[*] What is the name of the snippet you would like to add? ').lower().split()
     else:
         function = [x.lower() for x in args.function]
     logging.info("function : "+ str(function))
