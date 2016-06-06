@@ -87,7 +87,7 @@ def search(args):
             x += 1
             logging.info('raw snippet : '+str(snippet))
 
-            print colored('[*][*] Snippet #'+str(x), 'cyan', attrs=['bold'])
+            print colored('snippet #'+str(x), 'cyan', attrs=['bold'])
 
             for string in snippet["function"]:
                 sys.stdout.write(colored(string, 'red', attrs=['bold'])+' ')
