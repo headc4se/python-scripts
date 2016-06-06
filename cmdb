@@ -53,7 +53,7 @@ def main():
         if not searchResult and args.edit:
             for x in range(0,3): 
                 valid = ['y','n','yes','no']
-                inp = raw_input('[*] The command '+str(args.cmd)+' was not found in the database, would you like to add it [y(es)/n(o)]? ')
+                inp = raw_input('[*] The command '+str(args.cmd)+' was not found in the database, would you like to add it [y(es)/n(o)]? ').strip()
                 if inp.lower() == ('n' or 'no'):
                     print '[*] Exiting program'
                     sys.exit()
@@ -71,7 +71,7 @@ def main():
         if not searchResult and args.update:
             for x in range(0,3): 
                 valid = ['y','n','yes','no']
-                inp = raw_input('[*] The command '+str(args.cmd)+' was not found in the database, would you like to add it [y(es)/n(o)]? ')
+                inp = raw_input('[*] The command '+str(args.cmd)+' was not found in the database, would you like to add it [y(es)/n(o)]? ').strip()
                 if inp.lower() == ('n' or 'no'):
                     print '[*] Exiting program'
                     sys.exit()
@@ -88,7 +88,7 @@ def main():
             # loop to confirm editing 
             for x in range(0,3): 
                 valid = ['y','n','yes','no']
-                inp = raw_input('[*] The command '+str(args.cmd)+' was found in the database, would you like to edit it [y(es)/n(o)]? ')
+                inp = raw_input('[*] The command '+str(args.cmd)+' was found in the database, would you like to edit it [y(es)/n(o)]? ').strip()
                 if inp.lower() == ('n' or 'no'):
                     print '[*] Exiting program'
                     sys.exit()
@@ -123,7 +123,7 @@ def main():
         if not searchResult and args.search:
             for x in range(0,3): 
                 valid = ['y','n','yes','no']
-                inp = raw_input('[*] The command '+str(args.cmd)+' was not found in the database, would you like to add it [y(es)/n(o)]? ')
+                inp = raw_input('[*] The command '+str(args.cmd)+' was not found in the database, would you like to add it [y(es)/n(o)]? ').strip()
                 if inp.lower() == ('n' or 'no'):
                     print '[*] Exiting program'
                     sys.exit()
@@ -143,7 +143,7 @@ def addEntry(cmd, command={}):
         category = [category.strip() for category in categoryRaw.split(',')]
 
         # Insert Code Examples
-        codeRaw = raw_input("[*] Would you like to write a code example? [y(es)/n(o)]? ") 
+        codeRaw = raw_input("[*] Would you like to write a code example? [y(es)/n(o)]? ").strip()
         code = {}
         if codeRaw.lower() == ('y' or 'yes'):
             while True: 
@@ -155,7 +155,7 @@ def addEntry(cmd, command={}):
                     sys.stdout.write(num+') ')
                     print code[num][0]
                     print '   '+code[num][1]
-                another = raw_input("[*] Would you like to add another example [y(es)/n(o)]? ")
+                another = raw_input("[*] Would you like to add another example [y(es)/n(o)]? ").strip()
                 #if another.lower() == ('y' or 'yes'):
                 if another.lower() == ('n' or 'no'):
                     break
@@ -183,7 +183,7 @@ def addEntry(cmd, command={}):
                 sys.stdout.write(num+') ')
                 print command["code"][num][0]
                 print '   '+command["code"][num][1]
-            cont = raw_input('[*] Does this entry look alright to you [y(es)/n(o)/q(uit)]? ')
+            cont = raw_input('[*] Does this entry look alright to you [y(es)/n(o)/q(uit)]? ').strip()
             if cont.lower() == ('y' or 'yes'):
                 break
             if cont.lower() == ('n' or 'no'):
@@ -224,7 +224,7 @@ def editEntry(cmd, command={}, new=False):
             sys.stdout.write(num+') ')
             print command["code"][num][0]
             print '   '+command["code"][num][1]
-        field = raw_input('[*] Which field of '+cmd+' would you like to edit? [n(ame) / c(ategory) / co(de)] Press a(dd) to add the edited entry or q(uit) to quit. ') 
+        field = raw_input('[*] Which field of '+cmd+' would you like to edit? [n(ame) / c(ategory) / co(de)] Press a(dd) to add the edited entry or q(uit) to quit. ').strip()
         if field.lower() == ('n' or 'name'):
             name = raw_input('[*] Type the new name for the command : ')
             var = db.find_one({"name":name})
@@ -237,10 +237,10 @@ def editEntry(cmd, command={}, new=False):
                 sys.stdout.write(num+') ')
                 print command["code"][num][0]
                 print '   '+command["code"][num][1]
-            num = raw_input('[*] Type the number of the input you want to edit. Alternatively type a new number to create a new entry. ')
+            num = raw_input('[*] Type the number of the input you want to edit. Alternatively type a new number to create a new entry. ').strip()
             try:
                 if command["code"][num]:
-                    delete = raw_input('[*] Would you like to d(elete) or e(dit) this entry? ')
+                    delete = raw_input('[*] Would you like to d(elete) or e(dit) this entry? ').strip()
                     if delete.lower() == ('d' or 'delete'):
                         print 'deleting code'
                         del command["code"][num]
@@ -282,7 +282,7 @@ def addExample(cmd):
             sys.stdout.write(num+') ')
             print command["code"][num][0]
             print '   '+command["code"][num][1]
-        num = raw_input('[*] Type the number of the input you want to edit. Alternatively type a new number to create a new entry, type q(uit) to quit, or type a(dd) to add the edited entry. ')
+        num = raw_input('[*] Type the number of the input you want to edit. Alternatively type a new number to create a new entry, type q(uit) to quit, or type a(dd) to add the edited entry. ').strip()
         if num == ('q' or 'quit'):
             sys.exit()
         if num == ('a' or 'add'):
@@ -292,7 +292,7 @@ def addExample(cmd):
             break
         try:
             if command["code"][str(num)]:
-                delete = raw_input('[*] Would you like to d(elete) or e(dit) this entry? ')
+                delete = raw_input('[*] Would you like to d(elete) or e(dit) this entry? ').strip()
                 if delete.lower() == ('d' or 'delete'):
                     del command["code"][str(num)]
                 if delete.lower() == ('e' or 'edit'):
