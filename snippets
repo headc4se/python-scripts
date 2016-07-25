@@ -25,11 +25,9 @@ def main():
 
     parser= argparse.ArgumentParser(description='[*] Query and edit a database of code snippets')  
     parser.add_argument('function',help='query function in database', nargs='*')
-    # Only takes one language at the moment 
     parser.add_argument('-l','--language' ,help='language specification')
     parser.add_argument('-n','--number', default=5, type=int, help='specify the number of results to be returned, default is 5')
-    parser.add_argument('-a','--add', action='store_true', help='flag to add snippet to database') 
-
+    parser.add_argument('-a','--add', action='store_true', help='flag to add snippet to database')
     args = parser.parse_args()
     logging.info(args)
 
@@ -91,10 +89,8 @@ def search(args):
 
             for string in snippet["function"]:
                 sys.stdout.write(colored(string, 'red', attrs=['bold'])+' ')
-            #language = colored("\nlang: "+snippet["language"], 'red')
             print
 
-           # print "\n lang: "+language
 
             for line in snippet["snippet"]:
                 print line
